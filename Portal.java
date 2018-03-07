@@ -29,6 +29,8 @@ public class Portal {
             GBTModel model = GBTModel.train(config, traindata);
             long trainEnd = System.currentTimeMillis();
             System.out.println("Train complete. Time = " + Long.toString(trainEnd - trainStart) + " milliseconds");
+            
+            model.printFeatureImportances();
 
             long predictStart = System.currentTimeMillis();
             model.predict(testdata);

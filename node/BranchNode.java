@@ -2,6 +2,7 @@ package node;
 
 import java.util.List;
 
+import data.FeatureImportances;
 import data.FeatureSelector;
 import data.FeatureVector;
 import model.Config;
@@ -70,6 +71,13 @@ public class BranchNode extends AbstractNode {
         else {
             rightNode.performLogitIncrement(vector);
         }
+    }
+    
+    @Override
+    public void updateFeatureImportances(FeatureImportances importances) {
+    	importances.increment(splittingFeatureId, metricGain);
+    	leftNode.updateFeatureImportances(importances);
+    	rightNode.updateFeatureImportances(importances);
     }
 
 }

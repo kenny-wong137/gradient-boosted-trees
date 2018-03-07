@@ -18,6 +18,7 @@ public class Data {
     public List<FeatureVector> getFeatureVectors() { return featureVectors; }
     public int getNumFeatureVectors() { return featureVectors.size(); }
     public int getNumFeatures() { return featureIdsToNames.length; }
+    public String getFeatureName(int featureId) { return featureIdsToNames[featureId]; }
     
     
     public String toString() {

@@ -1,5 +1,6 @@
 package node;
 
+import data.FeatureImportances;
 import data.FeatureSelector;
 import data.FeatureVector;
 import model.Config;
@@ -59,6 +60,12 @@ public class LeafNode extends AbstractNode {
             return this;
         }
         
+        boolean notEnoughPoints = (datapoints.size() < 2 * config.getMinSamplesLeaf());
+        if (notEnoughPoints) {
+        	finalise(config);
+        	return this;
+        }
+        
         try {
         	// will now attempt to choose best split (and best splitting feature)
         	List<Integer> featureSelection = selector.sampleFeatures();
@@ -109,6 +116,11 @@ public class LeafNode extends AbstractNode {
     @Override
     public void performLogitIncrement(FeatureVector vector) {
         vector.incrementLogit(deltaLogit);
+    }
+    
+    @Override
+    public void updateFeatureImportances(FeatureImportances importances) {
+    	// do nothing
     }
 
 }

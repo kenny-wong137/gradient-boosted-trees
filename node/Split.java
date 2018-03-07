@@ -31,86 +31,88 @@ public class Split implements Callable<BranchNode> {
 		// doing this inside the thread
     	
         int totalSamples = datapoints.size();
+        
+        // already checked in LeafNode class, but just in case...
+        if (totalSamples < 2 * config.getMinSamplesLeaf()) {
+        	return null;
+        }
          
         // sort the samples in the leaf by the value of the chosen feature
         datapoints.sort((vector1, vector2) -> Double.compare(vector1.getFeatureValue(featureId), vector2.getFeatureValue(featureId)));
         
-        // initially, everything is sent to the right.
+        // initially, everything except the first minSamplesLeaf datapoints are sent to the right
         double sumLeftFirstDerivs = 0.0;
         double sumLeftSecondDerivs = 0.0;
         double sumRightFirstDerivs = 0.0;
         double sumRightSecondDerivs = 0.0;
-        for (FeatureVector vector : datapoints) {
-        	sumRightFirstDerivs += vector.getFirstDeriv(); // do not use .stream() here - too slow!
-        	sumRightSecondDerivs += vector.getSecondDeriv();
-        }
-
-        int currentSplitPosition = 0; // NB currentSplitPosition will always be equal to the number of samples sent to the LEFT.
-
-        double previousValue = datapoints.get(currentSplitPosition).getFeatureValue(featureId);
         
-        double entropyDecreaseWithoutSplit = - 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / sumRightSecondDerivs;
+        for (int position = 0; position < totalSamples; position++) {
+        	if (position < config.getMinSamplesLeaf()) {
+        		sumLeftFirstDerivs += datapoints.get(position).getFirstDeriv(); // do not use .stream() here - too slow!
+        		sumLeftSecondDerivs += datapoints.get(position).getSecondDeriv();
+        	} else {
+        		sumRightFirstDerivs += datapoints.get(position).getFirstDeriv(); // do not use .stream() here - too slow!
+        		sumRightSecondDerivs += datapoints.get(position).getSecondDeriv();
+        	}
+        }
+        
+        int currentPosition = config.getMinSamplesLeaf();
+        	// NB currentPosition will always be equal to the number of samples sent to the LEFT.
+        	// it will also be the index of the datapoint to the right of the split.
+        
+        double sumAllFirstDerivs = sumLeftFirstDerivs + sumRightFirstDerivs;
+        double sumAllSecondDerivs = sumLeftSecondDerivs + sumRightSecondDerivs;
+
+        double entropyDecreaseWithoutSplit = - 0.5 * sumAllFirstDerivs * sumAllFirstDerivs / sumAllSecondDerivs;
         double bestEntropyDecrease = entropyDecreaseWithoutSplit;
         	// this is the benchmark, i.e. what would be achieved without splitting
         Double bestSplitThreshold = null;
         Integer bestSplitPosition = null;
 
-        // now transfer the elements across from the right to the left, one by one, starting with the lowest ranked one
+
         while(true) {
-            // e.g. if the ordered values are 4.1, 4.1, 5.2, 5.2, 5.2, 7.3, 10.5, then previousValue will initially be 4.1.
-            // ... and after the mini while loop, it will look like: 4.1, 4.1 | 5.2, 5.2, 5.2, 7.3, 10.5.
-            // The next time round, it will look like 4.1, 4.1 | 5.2, 5.2, 5.2, 7.3, 10.5, with initial value now bumped up to 5.2
-            // ... and after the mini while loop, it will look like 4.1, 4.1, 5.2, 5.2, 5.2 | 7.3, 10.5
-            while(currentSplitPosition < totalSamples && datapoints.get(currentSplitPosition).getFeatureValue(featureId) == previousValue) {
-            	
-                double currentFirstDeriv = datapoints.get(currentSplitPosition).getFirstDeriv();
-                double currentSecondDeriv = datapoints.get(currentSplitPosition).getSecondDeriv();
-                
-                sumLeftFirstDerivs += currentFirstDeriv;
-                sumRightFirstDerivs -= currentFirstDeriv;
-                sumLeftSecondDerivs += currentSecondDeriv;
-                sumRightSecondDerivs -= currentSecondDeriv;
-
-                currentSplitPosition ++;
-            }
-
-            // If the number of samples remaining in the right leaf is less than minSamplesLeaf, then there is no point in continuing
-            if (currentSplitPosition > totalSamples - config.getMinSamplesLeaf()) {
-                break;
-            }
-
-            // Only consider the possibility of splitting if the number of samples in the left leaf is at least as large as minSamplesLeaf
-            if (currentSplitPosition >= config.getMinSamplesLeaf()) {
-            	
+        	
+        	double valueToLeft = datapoints.get(currentPosition - 1).getFeatureValue(featureId);
+        	double valueToRight = datapoints.get(currentPosition).getFeatureValue(featureId);
+        	
+        	if (valueToLeft < valueToRight) {
                 // Calculate metric gain if splitting here
-            	double leftEntropyDecrease = - 0.5 * sumLeftFirstDerivs * sumLeftFirstDerivs / sumLeftSecondDerivs;
-            	double rightEntropyDecrease = - 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / sumRightSecondDerivs;
+                double leftEntropyDecrease = - 0.5 * sumLeftFirstDerivs * sumLeftFirstDerivs / sumLeftSecondDerivs;
+                double rightEntropyDecrease = - 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / sumRightSecondDerivs;
                 double entropyDecrease = leftEntropyDecrease + rightEntropyDecrease;
-                
-                boolean notNaN = !Double.isNaN(entropyDecrease); // sometimes we get division by zero, due to rounding
-                boolean improvement = (entropyDecrease < bestEntropyDecrease);
-
-                if (notNaN && improvement) {
-                    double leftThreshold = datapoints.get(currentSplitPosition - 1).getFeatureValue(featureId);
-                    double rightThreshold = datapoints.get(currentSplitPosition).getFeatureValue(featureId);
-                    double midThreshold = (leftThreshold + rightThreshold) / 2.0;
-
+                                   	
+                	// this condition will also be false if entropyDecrease is NaN, which occurs when probs are very close to 1 or 0.
+                if (entropyDecrease < bestEntropyDecrease) {
                     bestEntropyDecrease = entropyDecrease;
-                    bestSplitThreshold = midThreshold;
-                    bestSplitPosition = currentSplitPosition;
+                    bestSplitThreshold = (valueToLeft + valueToRight) / 2.0;
+                    bestSplitPosition = currentPosition;
                 }
-            }
+        	}
+        	
+        	// now transfer datapoints across
+        	if (currentPosition < totalSamples - config.getMinSamplesLeaf()) {
+        		double currentFirstDeriv = datapoints.get(currentPosition).getFirstDeriv();
+        		double currentSecondDeriv = datapoints.get(currentPosition).getSecondDeriv();
+                
+        		sumLeftFirstDerivs += currentFirstDeriv;
+        		sumRightFirstDerivs -= currentFirstDeriv;
+        		sumLeftSecondDerivs += currentSecondDeriv;
+        		sumRightSecondDerivs -= currentSecondDeriv;
 
-            // update previous value, so that the condition in the above mini while loop will be true again, allowing it to run once more
-            previousValue = datapoints.get(currentSplitPosition).getFeatureValue(featureId);
+        		currentPosition ++;
+        		
+        	} else {
+        		break;
+        	}
         }
+        
         
         if (bestSplitPosition != null) {
         	
         	List<FeatureVector> leftDatapoints = datapoints.subList(0,  bestSplitPosition); // these are views - no actual copying has happened
         	List<FeatureVector> rightDatapoints = datapoints.subList(bestSplitPosition,  totalSamples);
         	
-        	double metricGainFromSplit = bestEntropyDecrease - entropyDecreaseWithoutSplit; // subtract what would have been gained without bothering
+        	double metricGainFromSplit = bestEntropyDecrease - entropyDecreaseWithoutSplit; // subtract what would have been gained without splitting
         	
         	return new BranchNode(depth, bestSplitThreshold, featureId, metricGainFromSplit, leftDatapoints, rightDatapoints);
         	

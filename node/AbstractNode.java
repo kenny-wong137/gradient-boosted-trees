@@ -1,5 +1,6 @@
 package node;
 
+import data.FeatureImportances;
 import data.FeatureSelector;
 import data.FeatureVector;
 import model.Config;
@@ -24,5 +25,6 @@ public abstract class AbstractNode {
     
     // for prediction (leaves the state of this object alone, and alters the logit attribute within featureVector)
     abstract public void performLogitIncrement(FeatureVector featureVector);
-
+    
+    abstract public void updateFeatureImportances(FeatureImportances importances);
 }
