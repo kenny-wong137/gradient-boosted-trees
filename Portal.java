@@ -20,6 +20,7 @@ public class Portal {
                     .setMinSamplesLeaf(25)
                     .setNumFeaturesSplit(10)
                     .setLearningRate(0.1)
+                    .setL2reg(0.25)
                     .setNumThreads(3)
                     .build();
 

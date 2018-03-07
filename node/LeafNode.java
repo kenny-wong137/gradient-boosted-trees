@@ -40,7 +40,8 @@ public class LeafNode extends AbstractNode {
     	
     	double sumFirstDerivs = datapoints.stream().mapToDouble(vector -> vector.getFirstDeriv()).sum();
     	double sumSecondDerivs = datapoints.stream().mapToDouble(vector -> vector.getSecondDeriv()).sum();
-    	deltaLogit = - config.getLearningRate() * sumFirstDerivs / sumSecondDerivs; // Newton-Raphson step
+    	deltaLogit = - config.getLearningRate() * sumFirstDerivs / (sumSecondDerivs + config.getL2reg());
+    			// Newton-Raphson step
     	
     	datapoints.forEach(vector -> {vector.incrementLogit(deltaLogit);} );
     	

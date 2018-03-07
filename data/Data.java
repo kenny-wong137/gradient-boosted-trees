@@ -16,11 +16,10 @@ public class Data {
     private boolean fitted = false; // will be true if either it has been used for training or for validation
 
     public List<FeatureVector> getFeatureVectors() { return featureVectors; }
-    public int getNumFeatureVectors() { return featureVectors.size(); }
     public int getNumFeatures() { return featureIdsToNames.length; }
     public String getFeatureName(int featureId) { return featureIdsToNames[featureId]; }
     
-    
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < featureIdsToNames.length; i++) {
@@ -118,9 +117,11 @@ public class Data {
     // prints precision-recall evaluations at each of the precisions asked for
     public void evaluate(double[] inputPrecisions) {
     	
-        Collections.sort(featureVectors);
+    	List<FeatureVector> featureVectorsCopy = new ArrayList<>(featureVectors);
+    	
+        Collections.sort(featureVectorsCopy);
 
-        double totalCountPositive = (double) featureVectors.stream().filter(datapoint -> datapoint.getLabel()).count();
+        double totalCountPositive = (double) featureVectorsCopy.stream().filter(datapoint -> datapoint.getLabel()).count();
 
         List<Double> thresholds = new ArrayList<>();
         List<Double> precisions = new ArrayList<>();
@@ -134,7 +135,7 @@ public class Data {
         precisions.add(1.0);
         recalls.add(0.0);
 
-        for (FeatureVector vector : featureVectors) {
+        for (FeatureVector vector : featureVectorsCopy) {
             currentThreshold = vector.getProb();
             currentCountAboveThreshold += 1.0;
             if (vector.getLabel()) {

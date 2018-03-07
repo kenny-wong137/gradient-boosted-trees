@@ -9,12 +9,16 @@ public class Config {
     private Integer maxTreeDepth = null;
 
     private double learningRate = 1.0;
+    
+    private double l2reg = 0.0;
+    
+    private double minGainSplit = 0.0;
 
     private int numTrees = 1;
     
     private int numThreads = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
 
-
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Trees: ");
@@ -35,6 +39,14 @@ public class Config {
             builder.append("; Learning rate: ");
             builder.append(learningRate);
         }
+        if (l2reg != 0.0) {
+        	builder.append("; L2 reg: ");
+        	builder.append(l2reg);
+        }
+        if (minGainSplit != 0.0) {
+        	builder.append("; Min Gain: ");
+        	builder.append(minGainSplit);
+        }
         return builder.toString();
     }
 
@@ -43,6 +55,8 @@ public class Config {
     public Integer getMaxTreeDepth() { return maxTreeDepth; }
     public int getNumTrees() { return numTrees; }
     public double getLearningRate() { return learningRate; }
+    public double getL2reg() { return l2reg; }
+    public double getMinGainSplit() { return minGainSplit; }
     public int getNumThreads() { return numThreads; }
 
 
@@ -109,6 +123,26 @@ public class Config {
                 throw new IllegalArgumentException("Cannot set num trees below 1.");
             }
             return this;
+        }
+        
+        // if not used, then zero
+        public Builder setL2reg(double l2reg) {
+        	if (l2reg >= 0.0) {
+        		config.l2reg = l2reg;
+        	} else {
+        		throw new IllegalArgumentException("L2 reg must be non-negative.");
+        	}
+        	return this;
+        }
+        
+        // if not used, then zero
+        public Builder setMinGainSplit(double minGainSplit) {
+        	if (minGainSplit >= 0.0) {
+        		config.minGainSplit = minGainSplit;
+        	} else {
+        		throw new IllegalArgumentException("Min gain split must be non-negative.");
+        	}
+        	return this;
         }
         
         public Builder setNumThreads(int numThreads) {

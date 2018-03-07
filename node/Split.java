@@ -1,6 +1,7 @@
 package node;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -38,7 +39,7 @@ public class Split implements Callable<BranchNode> {
         }
          
         // sort the samples in the leaf by the value of the chosen feature
-        datapoints.sort((vector1, vector2) -> Double.compare(vector1.getFeatureValue(featureId), vector2.getFeatureValue(featureId)));
+        datapoints.sort(Comparator.comparing(vector -> vector.getFeatureValue(featureId)));
         
         // initially, everything except the first minSamplesLeaf datapoints are sent to the right
         double sumLeftFirstDerivs = 0.0;
@@ -63,9 +64,9 @@ public class Split implements Callable<BranchNode> {
         double sumAllFirstDerivs = sumLeftFirstDerivs + sumRightFirstDerivs;
         double sumAllSecondDerivs = sumLeftSecondDerivs + sumRightSecondDerivs;
 
-        double entropyDecreaseWithoutSplit = - 0.5 * sumAllFirstDerivs * sumAllFirstDerivs / sumAllSecondDerivs;
-        double bestEntropyDecrease = entropyDecreaseWithoutSplit;
-        	// this is the benchmark, i.e. what would be achieved without splitting
+        double entropyDecreaseWithoutSplit = - 0.5 * sumAllFirstDerivs * sumAllFirstDerivs / (sumAllSecondDerivs + config.getL2reg());
+        double bestEntropyDecrease = entropyDecreaseWithoutSplit - config.getMinGainSplit();
+        	// this is the benchmark to beat
         Double bestSplitThreshold = null;
         Integer bestSplitPosition = null;
 
@@ -77,8 +78,8 @@ public class Split implements Callable<BranchNode> {
         	
         	if (valueToLeft < valueToRight) {
                 // Calculate metric gain if splitting here
-                double leftEntropyDecrease = - 0.5 * sumLeftFirstDerivs * sumLeftFirstDerivs / sumLeftSecondDerivs;
-                double rightEntropyDecrease = - 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / sumRightSecondDerivs;
+                double leftEntropyDecrease = - 0.5 * sumLeftFirstDerivs * sumLeftFirstDerivs / (sumLeftSecondDerivs + config.getL2reg());
+                double rightEntropyDecrease = - 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / (sumRightSecondDerivs + config.getL2reg());
                 double entropyDecrease = leftEntropyDecrease + rightEntropyDecrease;
                                    	
                 	// this condition will also be false if entropyDecrease is NaN, which occurs when probs are very close to 1 or 0.
