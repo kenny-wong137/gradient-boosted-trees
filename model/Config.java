@@ -11,6 +11,7 @@ public class Config {
     private double learningRate = 1.0;
     
     private double l2reg = 0.0;
+    private static final double minL2reg = 0.01;
     
     private double minGainSplit = 0.0;
 
@@ -127,10 +128,10 @@ public class Config {
         
         // if not used, then zero
         public Builder setL2reg(double l2reg) {
-        	if (l2reg >= 0.0) {
+        	if (l2reg >= minL2reg) {
         		config.l2reg = l2reg;
         	} else {
-        		throw new IllegalArgumentException("L2 reg must be non-negative.");
+        		throw new IllegalArgumentException("L2 reg must be at least " + minL2reg);
         	}
         	return this;
         }

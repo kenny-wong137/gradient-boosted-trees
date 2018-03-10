@@ -30,8 +30,10 @@ public class FeatureSelector {
 	
     public List<Integer> sampleFeatures() {
 
-        // This calls the random generator more times than strictly necessary, but it looks tidy, and experiments show that it's not a bottleneck.
-        List<Integer> featureIdsToShuffle = IntStream.range(0, numFeaturesAvailable).boxed().collect(Collectors.toList());
+        // This calls the random generator more times than strictly necessary,
+    	// but it looks tidy, and experiments show that it's not a bottleneck.
+        List<Integer> featureIdsToShuffle
+        		= IntStream.range(0, numFeaturesAvailable).boxed().collect(Collectors.toList());
         Collections.shuffle(featureIdsToShuffle, generator);
 
         return featureIdsToShuffle.subList(0, numFeaturesToSelect);

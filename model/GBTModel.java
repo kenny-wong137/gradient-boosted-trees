@@ -10,7 +10,7 @@ import java.util.List;
 
 public class GBTModel {
 
-    private List<AbstractNode> trees; // Each AbstractNode in this list is the **root** of a (fully-trained) decision tree
+    private List<AbstractNode> trees; // Each AbstractNode in this list is the **root** of a tree
     private FeatureImportances importances;
 
     public String toString() {
@@ -32,7 +32,7 @@ public class GBTModel {
         this.importances = importances;
     }
 
-    // a factory - returns an RFModel object whose trees are fitted to the data according to the config
+    // a factory - returns a GBTModel object whose trees are fitted to data according to config
     public static GBTModel train(Config config, Data data) {
     	
     	data.clearLogits();

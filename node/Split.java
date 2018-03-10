@@ -8,7 +8,6 @@ import java.util.concurrent.Callable;
 import data.FeatureVector;
 import model.Config;
 
-// calculates and holds the best split point for one specific feature, and for one specific leaf sample taken from one specific bag
 public class Split implements Callable<BranchNode> {
 	
 	private Config config;
@@ -27,7 +26,8 @@ public class Split implements Callable<BranchNode> {
 	@Override
     public BranchNode call() {
 		
-		datapoints = new ArrayList<>(datapoints);  // make shallow copy, because (i) we are accessing datapoints from multiple threads
+		datapoints = new ArrayList<>(datapoints);  // make shallow copy,
+		// because (i) we are accessing datapoints from multiple threads
 		// ... and (ii) because datapoints might be a view of a sublist
 		// doing this inside the thread
     	
@@ -49,10 +49,10 @@ public class Split implements Callable<BranchNode> {
         
         for (int position = 0; position < totalSamples; position++) {
         	if (position < config.getMinSamplesLeaf()) {
-        		sumLeftFirstDerivs += datapoints.get(position).getFirstDeriv(); // do not use .stream() here - too slow!
+        		sumLeftFirstDerivs += datapoints.get(position).getFirstDeriv(); // don't use .stream() - too slow
         		sumLeftSecondDerivs += datapoints.get(position).getSecondDeriv();
         	} else {
-        		sumRightFirstDerivs += datapoints.get(position).getFirstDeriv(); // do not use .stream() here - too slow!
+        		sumRightFirstDerivs += datapoints.get(position).getFirstDeriv(); 
         		sumRightSecondDerivs += datapoints.get(position).getSecondDeriv();
         	}
         }
@@ -64,7 +64,8 @@ public class Split implements Callable<BranchNode> {
         double sumAllFirstDerivs = sumLeftFirstDerivs + sumRightFirstDerivs;
         double sumAllSecondDerivs = sumLeftSecondDerivs + sumRightSecondDerivs;
 
-        double entropyDecreaseWithoutSplit = - 0.5 * sumAllFirstDerivs * sumAllFirstDerivs / (sumAllSecondDerivs + config.getL2reg());
+        double entropyDecreaseWithoutSplit
+        			= - 0.5 * sumAllFirstDerivs * sumAllFirstDerivs / (sumAllSecondDerivs + config.getL2reg());
         double bestEntropyDecrease = entropyDecreaseWithoutSplit - config.getMinGainSplit();
         	// this is the benchmark to beat
         Double bestSplitThreshold = null;
@@ -78,11 +79,12 @@ public class Split implements Callable<BranchNode> {
         	
         	if (valueToLeft < valueToRight) {
                 // Calculate metric gain if splitting here
-                double leftEntropyDecrease = - 0.5 * sumLeftFirstDerivs * sumLeftFirstDerivs / (sumLeftSecondDerivs + config.getL2reg());
-                double rightEntropyDecrease = - 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / (sumRightSecondDerivs + config.getL2reg());
+                double leftEntropyDecrease =
+                		- 0.5 * sumLeftFirstDerivs * sumLeftFirstDerivs / (sumLeftSecondDerivs + config.getL2reg());
+                double rightEntropyDecrease =
+                		- 0.5 * sumRightFirstDerivs * sumRightFirstDerivs / (sumRightSecondDerivs + config.getL2reg());
                 double entropyDecrease = leftEntropyDecrease + rightEntropyDecrease;
-                                   	
-                	// this condition will also be false if entropyDecrease is NaN, which occurs when probs are very close to 1 or 0.
+
                 if (entropyDecrease < bestEntropyDecrease) {
                     bestEntropyDecrease = entropyDecrease;
                     bestSplitThreshold = (valueToLeft + valueToRight) / 2.0;
@@ -110,12 +112,15 @@ public class Split implements Callable<BranchNode> {
         
         if (bestSplitPosition != null) {
         	
-        	List<FeatureVector> leftDatapoints = datapoints.subList(0,  bestSplitPosition); // these are views - no actual copying has happened
+        	List<FeatureVector> leftDatapoints = datapoints.subList(0,  bestSplitPosition);
+        	// these are views - no actual copying has happened
         	List<FeatureVector> rightDatapoints = datapoints.subList(bestSplitPosition,  totalSamples);
         	
-        	double metricGainFromSplit = bestEntropyDecrease - entropyDecreaseWithoutSplit; // subtract what would have been gained without splitting
+        	double metricGainFromSplit = bestEntropyDecrease - entropyDecreaseWithoutSplit;
+        	// subtract what would have been gained without splitting
         	
-        	return new BranchNode(depth, bestSplitThreshold, featureId, metricGainFromSplit, leftDatapoints, rightDatapoints);
+        	return new BranchNode(depth, bestSplitThreshold, featureId, metricGainFromSplit,
+        									leftDatapoints, rightDatapoints);
         	
         } else {
         	return null; // return null if no split found

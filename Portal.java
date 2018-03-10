@@ -20,7 +20,7 @@ public class Portal {
                     .setMinSamplesLeaf(25)
                     .setNumFeaturesSplit(10)
                     .setLearningRate(0.1)
-                    .setL2reg(0.25)
+                    .setL2reg(0.1)
                     .setNumThreads(3)
                     .build();
 
@@ -29,14 +29,14 @@ public class Portal {
             long trainStart = System.currentTimeMillis();
             GBTModel model = GBTModel.train(config, traindata);
             long trainEnd = System.currentTimeMillis();
-            System.out.println("Train complete. Time = " + Long.toString(trainEnd - trainStart) + " milliseconds");
+            System.out.println("Train complete. Time = " + Long.toString(trainEnd - trainStart) + " millis");
             
             model.printFeatureImportances();
 
             long predictStart = System.currentTimeMillis();
             model.predict(testdata);
             long predictEnd = System.currentTimeMillis();
-            System.out.println("Predict complete. Time = " + Long.toString(predictEnd - predictStart) + " milliseconds");
+            System.out.println("Predict complete. Time = " + Long.toString(predictEnd - predictStart) + " millis");
             
             testdata.evaluate( new double[] { 0.7, 0.8, 0.9 } );
             testdata.save("DataSets/scores.csv");
