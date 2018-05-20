@@ -1,14 +1,10 @@
-package node;
+package model;
 
 import java.util.List;
-
-import data.FeatureImportances;
-import data.FeatureSelector;
-import data.FeatureVector;
-import model.Config;
+import java.util.concurrent.ExecutorService;
 
 // represents a node that has already split
-public class BranchNode extends AbstractNode {
+class BranchNode extends AbstractNode {
 
     // also has "depth" inherited from AbstractNode
     private AbstractNode leftNode;
@@ -16,10 +12,8 @@ public class BranchNode extends AbstractNode {
     private double threshold;
     private int splittingFeatureId;
     private double metricGain; // the entropy decrease from children minus from parent
-    	// (although in reality this would only be achieved if we do the full step, not multiplied by the learning rate)
 
-
-    public BranchNode(int depth, double threshold, int splittingFeatureId, double metricGain,
+    BranchNode(int depth, double threshold, int splittingFeatureId, double metricGain,
     					List<FeatureVector> leftDatapoints, List<FeatureVector> rightDatapoints) {
         super(depth);
         this.threshold = threshold;
@@ -30,10 +24,11 @@ public class BranchNode extends AbstractNode {
         rightNode = new LeafNode(this.depth + 1, rightDatapoints);
     }
     
-    public double getMetricGain() {
+    double getMetricGain() {
     	return metricGain;
     }
-
+    
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder(super.toString());
         builder.append(", Feature: ");
@@ -51,17 +46,18 @@ public class BranchNode extends AbstractNode {
     }
 
 
-    // here, we (attempt to) split the children (and if the children split, then we recursively attempt to split the grandchildren)
+    // here, we (attempt to) split the children
+    // (and if the children split, then we recursively attempt to split the grandchildren)
     @Override
-    public AbstractNode split(Config config, FeatureSelector selector) {
-        leftNode = leftNode.split(config, selector);
-        rightNode = rightNode.split(config, selector);
+    AbstractNode split(Config config, FeatureSelector selector, ExecutorService exec) {
+        leftNode = leftNode.split(config, selector, exec);
+        rightNode = rightNode.split(config, selector, exec);
 
         return this;
     }
 
     @Override
-    public void performLogitIncrement(FeatureVector vector) {
+    void performLogitIncrement(FeatureVector vector) {
 
         double featureValue = vector.getFeatureValue(splittingFeatureId);
 
@@ -74,7 +70,7 @@ public class BranchNode extends AbstractNode {
     }
     
     @Override
-    public void updateFeatureImportances(FeatureImportances importances) {
+    void updateFeatureImportances(FeatureImportances importances) {
     	importances.increment(splittingFeatureId, metricGain);
     	leftNode.updateFeatureImportances(importances);
     	rightNode.updateFeatureImportances(importances);

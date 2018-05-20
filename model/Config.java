@@ -51,14 +51,37 @@ public class Config {
         return builder.toString();
     }
 
-    public int getMinSamplesLeaf() { return minSamplesLeaf; }
-    public Integer getNumFeaturesSplit() { return numFeaturesSplit; }
-    public Integer getMaxTreeDepth() { return maxTreeDepth; }
-    public int getNumTrees() { return numTrees; }
-    public double getLearningRate() { return learningRate; }
-    public double getL2reg() { return l2reg; }
-    public double getMinGainSplit() { return minGainSplit; }
-    public int getNumThreads() { return numThreads; }
+    public int getMinSamplesLeaf() {
+        return minSamplesLeaf;
+    }
+    
+    public Integer getNumFeaturesSplit() {
+        return numFeaturesSplit;
+    }
+    
+    public Integer getMaxTreeDepth() {
+        return maxTreeDepth;
+    }
+    
+    public int getNumTrees() {
+        return numTrees;
+    }
+
+    public double getLearningRate() {
+        return learningRate;
+    }
+    
+    public double getL2reg() {
+        return l2reg;
+    }
+    
+    public double getMinGainSplit() {
+        return minGainSplit;
+    }
+    
+    public int getNumThreads() {
+        return numThreads;
+    }
 
 
     // *** Define builders. ***

@@ -1,38 +1,45 @@
-package data;
+package model;
 
-public class FeatureVector implements Comparable<FeatureVector> {
+class FeatureVector implements Comparable<FeatureVector> {
 
     private boolean label;
     private double logit; // will be set incrementally, both in training and in predicting
     private double[] featureValues;
     
-    public FeatureVector(boolean label, double[] featureValues) {
+    FeatureVector(boolean label, double[] featureValues) {
         this.label = label;
         this.logit = 0.0;
         this.featureValues = featureValues;
     }
     
-    public boolean getLabel() { return label; }
-    public double getLogit() { return logit; }
-    public double getFeatureValue(int featureId) { return featureValues[featureId]; }
+    boolean getLabel() {
+        return label;
+    }
     
-    public void incrementLogit(double deltaLogit) {
+    double getLogit() {
+        return logit;
+    }
+    
+    double getFeatureValue(int featureId) {
+        return featureValues[featureId];
+    }
+    
+    void incrementLogit(double deltaLogit) {
     	logit += deltaLogit;
     }
     
-    public void clearLogit() {
+    void clearLogit() {
     	logit = 0.0;
     }
     
-    
-    public double getProb() {
+    double getProb() {
     	// apply logistic function
     	double expLogit = Math.exp(logit);
     	return expLogit / (1.0 + expLogit);
     }
     
     // first derivative of entropy
-    public double getFirstDeriv() {
+    double getFirstDeriv() {
     	if (label) {
     		return getProb() - 1.0;
     	} else {
@@ -41,11 +48,12 @@ public class FeatureVector implements Comparable<FeatureVector> {
     }
     
     // second derivative of entropy
-    public double getSecondDeriv() {
+    double getSecondDeriv() {
     	double prob = getProb();
     	return prob * (1.0 - prob);
     }
 
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < featureValues.length; i++) {

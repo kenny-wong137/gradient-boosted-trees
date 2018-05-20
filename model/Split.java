@@ -1,21 +1,18 @@
-package node;
+package model;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import data.FeatureVector;
-import model.Config;
-
-public class Split implements Callable<BranchNode> {
+class Split implements Callable<BranchNode> {
 
     private Config config;
     private int featureId;
     private List<FeatureVector> datapoints; // this is a reference to a list shared by many threads
     private int depth;
 
-    public Split(Config config, int featureId, List<FeatureVector> datapoints, int depth) {
+    Split(Config config, int featureId, List<FeatureVector> datapoints, int depth) {
         this.config = config;
         this.featureId = featureId;
         this.datapoints = datapoints;
@@ -119,13 +116,11 @@ public class Split implements Callable<BranchNode> {
             double metricGainFromSplit = bestEntropyDecrease - entropyDecreaseWithoutSplit;
             // subtract what would have been gained without splitting
 
-            return new BranchNode(depth, bestSplitThreshold, featureId, metricGainFromSplit, leftDatapoints,
-                    rightDatapoints);
-
+            return new BranchNode(depth, bestSplitThreshold, featureId, metricGainFromSplit,
+                    leftDatapoints, rightDatapoints);
         } else {
             return null; // return null if no split found
         }
-
     }
 
 }

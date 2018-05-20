@@ -1,4 +1,4 @@
-package data;
+package model;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -13,11 +13,12 @@ public class Data {
 
     private List<FeatureVector> featureVectors;
     private String[] featureIdsToNames;
-    private boolean fitted = false; // will be true if either it has been used for training or for validation
+    private boolean fitted = false;
+    // will be true if either it has been used for training or for validation
 
-    public List<FeatureVector> getFeatureVectors() { return featureVectors; }
-    public int getNumFeatures() { return featureIdsToNames.length; }
-    public String getFeatureName(int featureId) { return featureIdsToNames[featureId]; }
+    List<FeatureVector> getFeatureVectors() { return featureVectors; }
+    int getNumFeatures() { return featureIdsToNames.length; }
+    String getFeatureName(int featureId) { return featureIdsToNames[featureId]; }
     
     @Override
     public String toString() {
@@ -37,6 +38,12 @@ public class Data {
         }
         return builder.toString();
     }
+    
+    private Data(List<FeatureVector> featureVectors, String[] featureIdsToNames) {
+        this.featureVectors = featureVectors;
+        this.featureIdsToNames = featureIdsToNames;
+        this.fitted = false;
+    }
 
     // File must contain Label column as well as feature columns
     // All features must be numeric. Nulls are NOT allowed.
@@ -47,7 +54,7 @@ public class Data {
     * 0,999.9,0.42,3.8
     */
     @SuppressWarnings("resource")
-	public Data(String filepath, String labelName) throws IOException {
+	public static Data load(String filepath, String labelName) throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(filepath));
 
@@ -61,7 +68,7 @@ public class Data {
             throw new ArrayIndexOutOfBoundsException("Label field does not exist.");
 
 
-        featureIdsToNames = new String[fullHeaderWords.length - 1];
+        String[] featureIdsToNames = new String[fullHeaderWords.length - 1];
 
         int targetCol = 0;
         for (int col = 0; col < fullHeaderWords.length; col++) {
@@ -73,12 +80,13 @@ public class Data {
 
         nextLine = reader.readLine();
 
-        featureVectors = new ArrayList<>();
+        List<FeatureVector> featureVectors = new ArrayList<>();
 
         while(nextLine != null) {
             String[] featureValueWords = nextLine.split(",");
 
-            double[] featureValues = new double[featureValueWords.length - 1]; // -1 to exclude the label column
+            double[] featureValues = new double[featureValueWords.length - 1];
+            // -1 to exclude the label column
 
             // parsing label with error-handling
             int labelAsInt = Integer.parseInt(featureValueWords[labelIndex]);
@@ -103,16 +111,15 @@ public class Data {
         }
 
         reader.close();
+        
+        return new Data(featureVectors, featureIdsToNames);
     }
-
-    
 
     public void save(String filepath) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(filepath));
         writer.write(this.toString());
         writer.close();
     }
-    
     
     // prints precision-recall evaluations at each of the precisions asked for
     public void evaluate(double[] inputPrecisions) {
@@ -121,7 +128,8 @@ public class Data {
     	
         Collections.sort(featureVectorsCopy);
 
-        double totalCountPositive = (double) featureVectorsCopy.stream().filter(datapoint -> datapoint.getLabel()).count();
+        double totalCountPositive = (double) featureVectorsCopy.stream()
+                .filter(datapoint -> datapoint.getLabel()).count();
 
         List<Double> thresholds = new ArrayList<>();
         List<Double> precisions = new ArrayList<>();
@@ -145,7 +153,6 @@ public class Data {
             thresholds.add(currentThreshold);
             precisions.add(currentCountPositiveAboveThreshold / currentCountAboveThreshold);
             recalls.add(currentCountPositiveAboveThreshold / totalCountPositive);
-
         }
         
         for (double precisionTarget : inputPrecisions) {
@@ -160,7 +167,8 @@ public class Data {
 
             double thresholdChosen = thresholds.get(bestViableIndex);
             double recallAchieved = recalls.get(bestViableIndex);
-            double actualPrecisionAchieved = precisions.get(bestViableIndex); // might be slightly off from the desired precision
+            double actualPrecisionAchieved = precisions.get(bestViableIndex);
+            // might be slightly off from the desired precision
 
             StringBuilder builder = new StringBuilder();
             builder.append("Precision: ");
@@ -170,17 +178,15 @@ public class Data {
             builder.append(", Threshold: ");
             builder.append(String.format("%.3f", thresholdChosen));
             System.out.println(builder);
-            
         }
     }
     
-    
-    public void markAsFitted() {
+    void markAsFitted() {
     	fitted = true;
     }
     
     // erase from previous train or predict
-    public void clearLogits() {
+    void clearLogits() {
     	if (fitted) {
     		featureVectors.forEach(vector -> {vector.clearLogit();});
     	}

@@ -1,9 +1,4 @@
-package node;
-
-import data.FeatureImportances;
-import data.FeatureSelector;
-import data.FeatureVector;
-import model.Config;
+package model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,19 +9,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 // Represents a terminal mode (although this may decide to split later)
-public class LeafNode extends AbstractNode {
+class LeafNode extends AbstractNode {
 
     // also has "depth" inherited from AbstractNode
     private List<FeatureVector> datapoints;
     private Double deltaLogit = null; // will be assigned value when finalised
 
-
-    public LeafNode(int depth, List<FeatureVector> datapoints) {
+    LeafNode(int depth, List<FeatureVector> datapoints) {
         super(depth);
         this.datapoints = datapoints;
     }
     
-    
+    @Override
     public String toString() {
     	StringBuilder builder = new StringBuilder(super.toString());
     	if (deltaLogit != null) {
@@ -51,7 +45,7 @@ public class LeafNode extends AbstractNode {
 
     // Splits as far as possible. Returns reference to the fully-split version of this node.
     @Override
-    public AbstractNode split(Config config, FeatureSelector selector) {
+    AbstractNode split(Config config, FeatureSelector selector, ExecutorService exec) {
 
         boolean tooDeep = (config.getMaxTreeDepth() != null) && (depth >= config.getMaxTreeDepth());
 
@@ -78,12 +72,8 @@ public class LeafNode extends AbstractNode {
         		Split task = new Split(config, featureId, datapoints, depth);
         		splittingTasks.add(task);
         	}
-        	
-        	ExecutorService exec = Executors.newFixedThreadPool(config.getNumThreads());
         
         	List<Future<BranchNode>> splittingOutcomes = exec.invokeAll(splittingTasks);
-        	exec.shutdown();
-        	exec.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
         
         	for (Future<BranchNode> outcome : splittingOutcomes) {
         		BranchNode splitUsingThisFeature = outcome.get();
@@ -106,7 +96,7 @@ public class LeafNode extends AbstractNode {
         	}
 
         	// In this final most interesting case where we DO a split, the output is a BranchNode, not a LeafNode
-        	return bestSplit.split(config, selector);
+        	return bestSplit.split(config, selector, exec);
         	
         } catch (ExecutionException | InterruptedException ex) {
         	throw new RuntimeException(ex);
@@ -115,12 +105,12 @@ public class LeafNode extends AbstractNode {
 
 
     @Override
-    public void performLogitIncrement(FeatureVector vector) {
+    void performLogitIncrement(FeatureVector vector) {
         vector.incrementLogit(deltaLogit);
     }
     
     @Override
-    public void updateFeatureImportances(FeatureImportances importances) {
+    void updateFeatureImportances(FeatureImportances importances) {
     	// do nothing
     }
 

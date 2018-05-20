@@ -1,5 +1,5 @@
-import data.Data;
 import model.Config;
+import model.Data;
 import model.GBTModel;
 
 // Use this as an entry-point for scoring real data
@@ -8,9 +8,8 @@ public class Portal {
     public static void main(String[] args) {
 
         try {
-
-            Data traindata = new Data("DataSets/trainset.csv", "Label");
-            Data testdata = new Data("DataSets/testset.csv", "Label");
+            Data traindata = Data.load("DataSets/trainset.csv", "Label");
+            Data testdata = Data.load("DataSets/testset.csv", "Label");
 
             System.out.println("Data loaded");
 
@@ -40,7 +39,6 @@ public class Portal {
             
             testdata.evaluate( new double[] { 0.7, 0.8, 0.9 } );
             testdata.save("DataSets/scores.csv");
-
         }
         catch (Exception ex) {
             ex.printStackTrace();

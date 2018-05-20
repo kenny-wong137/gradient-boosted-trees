@@ -1,12 +1,8 @@
 package model;
-import data.Data;
-import data.FeatureImportances;
-import data.FeatureSelector;
-import node.AbstractNode;
-import node.LeafNode;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GBTModel {
 
@@ -42,17 +38,20 @@ public class GBTModel {
     	
     	FeatureImportances importances = new FeatureImportances(data);
     	
+    	ExecutorService exec = Executors.newFixedThreadPool(config.getNumThreads());
+    	
     	for (int treeId = 0; treeId < config.getNumTrees(); treeId++) {
     		AbstractNode rootNode = new LeafNode(1, data.getFeatureVectors());
-    		rootNode = rootNode.split(config, featureSelector);
+    		rootNode = rootNode.split(config, featureSelector, exec);
     		trainedTrees.add(rootNode);
     		rootNode.updateFeatureImportances(importances);
     	}
+    	
+    	exec.shutdown();
         
         data.markAsFitted();
         
         return new GBTModel(trainedTrees, importances);
-
     }
 
 
@@ -63,11 +62,9 @@ public class GBTModel {
     	
     	testData.getFeatureVectors()
     		.parallelStream()
-    		.forEach(vector -> {  trees.forEach(tree -> {tree.performLogitIncrement(vector);}); });
+    		.forEach(vector -> {trees.forEach(tree -> {tree.performLogitIncrement(vector);});});
     	
     	testData.markAsFitted();
-
     }
-
 
 }
